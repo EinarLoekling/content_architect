@@ -17,11 +17,26 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* Text gradients reused across the site */
+        /* Text gradient */
         .kineticus-gradient {
             background-image: linear-gradient(to right, #3b82f6, #06b6d4);
             -webkit-background-clip: text;
             color: transparent;
+        }
+
+        /* Spinning rings animation */
+        @keyframes ring-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .ring-spin-slow {
+            animation: ring-spin 26s linear infinite;
+        }
+        .ring-spin-fast {
+            animation: ring-spin 16s linear infinite;
+        }
+        .ring-spin-reverse {
+            animation: ring-spin 32s linear infinite reverse;
         }
     </style>
 </head>
@@ -30,9 +45,21 @@
 
     <div class="max-w-6xl mx-auto">
         
-        <!-- LOGO SECTION -->
+        <!-- LOGO + SPINNING RINGS -->
         <header class="mb-12 text-center flex flex-col items-center">
-            <img src="kineticus_logo_blue.png" class="h-20 mb-4" alt="Kineticus Logo">
+            <div class="relative inline-block mb-4">
+                <!-- Animated concentric rings behind the logo -->
+                <div class="pointer-events-none absolute -inset-6">
+                    <div class="absolute inset-0 ring-spin-reverse rounded-full border border-blue-500/25 blur-[1px]"></div>
+                    <div class="absolute inset-3 ring-spin-slow rounded-full border border-cyan-400/35"></div>
+                    <div class="absolute inset-7 ring-spin-fast rounded-full border border-blue-400/45"></div>
+                </div>
+
+                <!-- Kineticus logo -->
+                <img src="kineticus_logo_blue.png"
+                     class="relative h-20 z-10"
+                     alt="Kineticus Logo">
+            </div>
 
             <h1 class="text-5xl font-bold kineticus-gradient mb-2">
                 AI Content Employee
