@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Content Architect Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+      background: #050816;
+      color: #f9fafb;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.25rem;
+    }
+    .subtitle {
+      color: #9ca3af;
+      margin-bottom: 2rem;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #f9fafb;
+      resize: vertical;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      background: #38bdf8;
+      color: #020617;
+      margin-top: 0.5rem;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+    .results {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #1f2937;
+    }
+    .card {
+      background: #020617;
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #111827;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: #111827;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Content Architect</h1>
+  <p class="subtitle">Paste your expertise + tone example. Get a full resource, LinkedIn posts, and nurture emails in one go.</p>
+
+  <div>
+    <label for="expertise">1) Expertise content</label>
+    <textarea id="expertise" placeholder="Explain your framework, thesis, or expertise here..."></textarea>
+
+    <label for="tone">2) Tone of voice example</label>
+    <textarea id="tone" placeholder="Paste a LinkedIn post, email, or conversation that sounds like you..."></textarea>
+
+    <label for="research">3) Optional context / research (optional)</label>
+    <textarea id="research" placeholder="Extra context, notes, market research, etc. (leave blank if none)"></textarea>
+
+    <button id="generateBtn">Run AI Architect</button>
+    <div id="status" style="margin-top:0.75rem; font-size:0.9rem; color:#9ca3af;"></div>
+  </div>
+
+  <div class="results" id="results" style="display:none;">
+    <div class="card">
+      <div class="badge">Long-form resource</div>
+      <h2 id="resourceTitle" style="margin:0 0 0.5rem 0;"></h2>
+      <pre id="resourceContent"></pre>
+    </div>
+
+    <div class="card">
+      <div class="badge">LinkedIn posts</div>
+      <div id="linkedinPosts"></div>
+    </div>
+
+    <div class="card">
+      <div class="badge">Nurture emails</div>
+      <div id="emails"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://YOUR-BACKEND-URL-HERE/generate"; // <-- change this
+
+    const btn = document.getElementById("generateBtn");
+    const statusEl = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
+
+    btn.addEventListener("click", async () => {
+      const expertise = document.getElementById("expertise").value.trim();
+      const tone = document.getElementById("tone").value.trim();
+      const research = document.getElementById("research").value.trim();
+
+      if (!expertise || !tone) {
+        statusEl.textContent = "Please fill in both expertise and tone.";
+        return;
+      }
+
+      btn.disabled = true;
+      statusEl.textContent = "Cooking up your content…";
+      resultsEl.style.display = "none";
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expertise, tone, research })
+        });
+
+        if (!res.ok) {
+          throw new Error("API error: " + res.status);
+        }
+
+        const data = await res.json();
+        renderResults(data);
+        statusEl.textContent = "Done ✅";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Something went wrong. Check the console and API URL.";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    function renderResults(data) {
+      resultsEl.style.display = "block";
+
+      // Resource
+      document.getElementById("resourceTitle").textContent = data.title || "Resource";
+      document.getElementById("resourceContent").textContent = data.resource_markdown || "";
+
+      // LinkedIn posts
+      const liContainer = document.getElementById("linkedinPosts");
+      liContainer.innerHTML = "";
+      (data.linkedin_posts || []).forEach((post, idx) => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+
+        const title = document.createElement("h3");
+        title.textContent = `Post ${idx + 1}`;
+        title.style.marginBottom = "0.25rem";
+        div.appendChild(title);
+
+        if (post.hook_variants && post.hook_variants.length) {
+          const hooksTitle = document.createElement("div");
+          hooksTitle.textContent = "Hook variants:";
+          hooksTitle.style.fontSize = "0.9rem";
+          hooksTitle.style.color = "#9ca3af";
+          div.appendChild(hooksTitle);
+
+          const ul = document.createElement("ul");
+          post.hook_variants.forEach(h => {
+            const li = document.createElement("li");
+            li.textContent = h;
+            ul.appendChild(li);
+          });
+          div.appendChild(ul);
+        }
+
+        const bodyPre = document.createElement("pre");
+        bodyPre.textContent = post.body || "";
+        div.appendChild(bodyPre);
+
+        if (post.cta) {
+          const cta = document.createElement("div");
+          cta.textContent = "CTA: " + post.cta;
+          cta.style.fontSize = "0.9rem";
+          cta.style.color = "#9ca3af";
+          div.appendChild(cta);
+        }
+
+        liContainer.appendChild(div);
+      });
+
+      // Emails
+      const emailContainer = document.getElementById("emails");
+      emailContainer.innerHTML = "";
+      (data.nurture_emails || []).forEach((email, idx) => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+
+        const title = document.createElement("h3");
+        title.textContent = `Email ${idx + 1}`;
+        title.style.marginBottom = "0.25rem";
+        div.appendChild(title);
+
+        if (email.subject_options && email.subject_options.length) {
+          const subTitle = document.createElement("div");
+          subTitle.textContent = "Subject options:";
+          subTitle.style.fontSize = "0.9rem";
+          subTitle.style.color = "#9ca3af";
+          div.appendChild(subTitle);
+
+          const ul = document.createElement("ul");
+          email.subject_options.forEach(s => {
+            const li = document.createElement("li");
+            li.textContent = s;
+            ul.appendChild(li);
+          });
+          div.appendChild(ul);
+        }
+
+        const bodyPre = document.createElement("pre");
+        bodyPre.textContent = email.body || "";
+        div.appendChild(bodyPre);
+
+        emailContainer.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
